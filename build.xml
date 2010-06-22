@@ -1,0 +1,247 @@
+<project name="hector-annotations" default="package" basedir="." xmlns:artifact="antlib:org.apache.maven.artifact.ant">
+    <description>
+        Airmerch Ancillary Service - Web
+    </description>
+
+
+
+  <property name="version" value="0.0.1-SNAPSHOT"/>
+  <property name="src.dir" location="src/main/java"/>
+  <property name="src.test.dir" location="src/test/java"/>
+  <property name="resources.dir" location="src/main/resources"/>
+  <property name="resources.test.dir" location="src/test/resources"/>
+  
+  <property name="config.dir" location="src/main/config"/>
+  <property name="build.dir" location="target"/>
+  <property name="classes.dir" location="${build.dir}/classes"/>  
+  <property name="classes.tests.dir" location="${build.dir}/test-classes"/>  
+  <property name="lib.compile.dir" location="lib/compile"/>
+  <property name="lib.test.dir" location="lib/test"/>
+  <property name="dist.dir" location="${build.dir}/dist"/>
+  <property name="test.report.dir" location="${build.dir}/test-report"/>
+  <property name="cobertura.report.dir" location="${build.dir}/cobertura-report"/>
+  <property name="cobertura.instrumented.dir" location="${build.dir}/cobertura-instrumented"/>
+  <property name="cobertura.coverage.file"  value="${build.dir}/coverage.ser"/>
+
+    <taskdef classpathref="cobertura.path" resource="tasks.properties"/>
+    <taskdef name="bind" classpathref="path.libs" classname="org.jibx.binding.ant.CompileTask"/>
+
+    <typedef resource="org/apache/maven/artifact/ant/antlib.xml"
+            uri="antlib:org.apache.maven.artifact.ant"
+            classpathref="path.libs" />
+
+
+
+
+    <path id="cobertura.path">
+        <fileset dir="${lib.test.dir}" includes="**/*.jar"/>
+        <fileset dir="${lib.compile.dir}" includes="**/log4j*.jar"/>  
+    </path>
+
+    <path id="path.libs">
+      <fileset dir="${lib.compile.dir}" includes="**/*.jar" />
+      <fileset dir="${lib.test.dir}" includes="**/*.jar"/>
+    </path>
+
+
+    <target name="compile">
+        <mkdir dir="${classes.dir}"  />
+        <javac srcdir="${src.dir}" destdir="${classes.dir}"  debug="true" >
+          <classpath>
+            <path refid="path.libs"/>
+            <fileset dir="${lib.compile.dir}" >
+          </classpath>
+       	 
+        </javac>
+    	<copy todir="${classes.dir}" >
+    		<fileset dir="${src.dir}" includes="**/*.xml"/>
+    	</copy>
+
+    </target>
+
+    <target name="compile-tests" depends="compile">
+            <mkdir dir="${classes.tests.dir}"  />
+            <javac srcdir="${src.test.dir}" destdir="${classes.tests.dir}">
+                <classpath >
+                    <path refid="path.libs"/>
+                    <pathelement location="${classes.dir}"/>
+                    <fileset dir="${lib.compile.dir}" />
+
+                    <pathelement location="${classes.dir}"/>
+                </classpath>
+            </javac>
+    </target>
+
+    <target name="test" depends="compile-tests">
+        <mkdir dir="${test.report.dir}/raw"/>
+         <junit printsummary="no" showoutput="no" haltonerror="true"  haltonfailure="true" forkmode="perBatch" fork="true">
+             <formatter type="plain" usefile="false" />
+             <classpath>
+                <path refid="path.libs"/>
+                 <fileset dir="${lib.compile.dir}" />
+                <pathelement location="${classes.tests.dir}"/>
+                  <pathelement location="${classes.dir}"/>
+                <pathelement  location = "${src.test.dir}"/>
+            </classpath>
+
+            <batchtest fork="yes" todir="${test.report.dir}/raw"  >
+                <fileset dir="${src.test.dir}" includes="**/*Test.java"/>
+                <formatter type="xml" />
+            </batchtest>
+
+        </junit>
+    </target>
+
+
+
+    <target name="test-report" depends="test">
+
+        <junitreport todir="${test.report.dir}">
+            <fileset dir="${test.report.dir}/raw"/>
+            <report todir="${test.report.dir}"/>
+        </junitreport>
+    </target>
+
+
+    <target  name="cobertura-test" depends="coberture-instrument">
+               <mkdir dir="${test.report.dir}/raw"/>
+         <junit printsummary="no" showoutput="no" haltonerror="true"  haltonfailure="true" forkmode="perBatch" fork="true">
+             <sysproperty key="net.sourceforge.cobertura.datafile" file="${build.dir}/coverage.ser" />
+             <classpath>
+                <path refid="path.libs"/>
+                 <pathelement  location="${cobertura.instrumented.dir}" />
+
+                 <pathelement location="${classes.tests.dir}"/>
+                <pathelement location="${classes.dir}"/>
+                <pathelement  location = "${src.test.dir}"/>
+            </classpath>
+
+            <batchtest fork="yes" todir="${test.report.dir}/raw"  >
+                <fileset dir="${src.test.dir}" includes="**/*Test.java"/>
+                <formatter type="xml" />
+            </batchtest>
+
+        </junit>
+     </target>
+
+
+    <target name="coberture-instrument" depends="compile-tests">
+        <mkdir dir="${cobertura.instrumented.dir}"/>
+        <cobertura-instrument todir="${cobertura.instrumented.dir}" datafile="${cobertura.coverage.file}" >
+<!--
+            <classpath >
+                  <pathelement location="${lib.test.dir}"/>
+            </classpath>
+-->
+            <fileset dir="${classes.dir}">
+                <include name="**/*.class" />
+                <exclude name="**/*Test.class" />
+            </fileset>
+        </cobertura-instrument>
+    </target>
+
+
+
+
+
+       <target name="cobertura-report" depends="cobertura-test">
+           <mkdir dir="${cobertura.report.dir}/xml"/>
+           <mkdir dir="${cobertura.report.dir}/html"/>
+            <cobertura-report format="html" datafile="${cobertura.coverage.file}" destdir="${cobertura.report.dir}/html"  srcdir="${src.dir}" />
+            <cobertura-report format="xml" datafile="${cobertura.coverage.file}" destdir="${cobertura.report.dir}/xml" srcdir="${src.dir}" />
+      </target>
+
+   <target name="package" depends="compile" >
+
+   <!--
+        <copy todir="${exploded.war.dir}/WEB-INF/classes">
+            <fileset dir="${classes.dir}" includes="**/*.class" />
+            <fileset dir="${classes.dir}" includes="**/*.xml" />
+            <fileset dir="${resources.dir}" includes="*"/>
+        </copy>
+        <copy todir="${exploded.war.dir}/WEB-INF/lib">
+            <fileset dir="${lib.compile.dir}" includes="**/*.jar" />
+        </copy>
+        <copy todir="${exploded.war.dir}/WEB-INF">
+            <fileset dir="${webapp.dir}/WEB-INF" includes="*"/>
+        </copy>
+-->
+<!--
+       <jar destfile="${build.dir}/${ant.project.name}-${version}.jar" basedir="${dist.dir}/${ant.project.name}-${version}.war" />
+	   -->
+
+   </target>
+    
+
+
+
+
+   <!-- <target  name="maven-update" >
+        <mkdir dir="${build.dir}/repo"/>
+        <artifact:remoteRepository id="sabre.snapshots.repository"
+                                   url="http://maven.sabre.com/content/repositories/snapshots"
+                                   layout="default">
+            <snapshots checksumPolicy="warn" updatePolicy="always"/>
+        </artifact:remoteRepository>
+        <artifact:remoteRepository id="sabre.repository"
+                                   url="http://maven.sabre.com/content/repositories/releases"
+                                   layout="default">
+            <releases checksumPolicy="warn" updatePolicy="always"/>
+        </artifact:remoteRepository>
+
+
+        <artifact:dependencies filesetId="maven.dependency.fileset" useScope="compile" >
+            <remoteRepository refid="sabre.repository"  />
+            <remoteRepository refid="sabre.snapshots.repository"  />
+
+            
+
+            <dependency groupId="com.sabre.airmerch"
+                        artifactId="airmerch-dataaccess"
+                        version="0.0.5-SNAPSHOT" scope="compile">
+                <exclusion groupId="" artifactId=""/>
+            </dependency>
+        </artifact:dependencies>
+
+
+        <copy todir="${build.dir}/repo" flatten="true">
+          <fileset refid="maven.dependency.fileset" >
+          </fileset>
+          --><!--<mapper classpathref="path.libs" type="flatten"   />--><!--
+        </copy>
+         
+
+        <delete>
+           <fileset dir="${lib.compile.dir}"  includes="airmerch-dataaccess*.jar"/>
+         </delete>
+
+        <copy todir="${lib.compile.dir}">
+            <fileset  dir="${build.dir}/repo" includes="airmerch-dataaccess-*.jar"/>
+        </copy>
+    </target>
+
+-->
+<!--
+    <target name="deploy">
+        <artifact:pom id="cas-war-pom" file="pom.xml" />
+
+        <artifact:install file="target/${ant.project.name}-${version}.war">
+            <pom refid="cas-war-pom"/>
+        </artifact:install>
+        <artifact:install-provider artifactId="wagon-http" version="1.0-beta-2"/>
+
+        <artifact:deploy file="target/${ant.project.name}-${version}.war">
+            <remoteRepository url="http://maven.sabre.com/content/repositories/snapshots">
+            </remoteRepository>
+            <pom refid="cas-war-pom"/>
+        </artifact:deploy>
+    </target>
+-->
+
+
+
+    <target name="clean">
+        <delete dir="target" failonerror="false"/>
+   </target>
+
+</project>
