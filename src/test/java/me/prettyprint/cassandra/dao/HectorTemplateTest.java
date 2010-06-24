@@ -50,16 +50,14 @@ public class HectorTemplateTest {
     private static Thread cassandraThread;
 
 
-//    @BeforeClass
+    @BeforeClass
     public static void preSetUp() throws IOException, TTransportException, InterruptedException {
-        // Tell cassandra where the configuration files are.
-        // Use the test configuration file.
-        if (System.getProperty("user.dir").endsWith("vvsv-offer-webapp")) {
-            System.setProperty("storage-config", "../3rdparty/apache-cassandra-0.6.2/conf");
-        } else {
-            System.setProperty("storage-config", "./3rdparty/apache-cassandra-0.6.2/conf");
-
-        }
+//    	   if (System.getProperty("user.dir").endsWith("hector-annotations")) {
+               System.setProperty("storage-config", "./src/test/resources");
+//           } else {
+//               System.setProperty("storage-config", "./hector-annotations/src/test/resources");
+//
+//           }
         CassandraServiceDataCleaner cleaner = new CassandraServiceDataCleaner();
         cleaner.prepare();
         cassandra = new EmbeddedCassandraService();
@@ -77,7 +75,7 @@ public class HectorTemplateTest {
 
     }
 
-//    @AfterClass
+    @AfterClass
     public static void postTearDown() {
         cassandraThread.interrupt();
     }
@@ -141,10 +139,10 @@ public class HectorTemplateTest {
         verify(log).error(anyString());
     }
 
-//    @Test
+    @Test
     public void testInsertEntity() throws Exception {
         //provided
-        String conn1 = "0.0.0.0:9160";
+        String conn1 = "localhost:9180";
         String[] connections = new String[]{conn1};
         HectorTemplate t = new HectorTemplate();
         t.afterPropertiesSet();
@@ -163,10 +161,10 @@ public class HectorTemplateTest {
     }
 
 
-//    @Test
+    @Test
     public void testGetRowOfColumns() throws Exception {
 
-        String conn1 = "0.0.0.0:9160";
+        String conn1 = "localhost:9180";
         String[] connections = new String[]{conn1};
         HectorTemplate t = new HectorTemplate();
         t.afterPropertiesSet();
@@ -186,10 +184,10 @@ public class HectorTemplateTest {
 
     }
 
-//    @Test
+    @Test
     public void testGetObjectByKey() throws Exception {
 
-        String conn1 = "0.0.0.0:9160";
+        String conn1 = "localhost:9180";
         String[] connections = new String[]{conn1};
         HectorTemplate t = new HectorTemplate();
         t.afterPropertiesSet();
@@ -215,10 +213,10 @@ public class HectorTemplateTest {
 
     }
 
-//    @Test
+    @Test
     public void testGetObjectWithMultipleFieldTypesByKey() throws Exception {
 
-        String conn1 = "0.0.0.0:9160";
+        String conn1 = "localhost:9180";
         String[] connections = new String[]{conn1};
         HectorTemplate t = new HectorTemplate();
         t.afterPropertiesSet();
@@ -241,7 +239,6 @@ public class HectorTemplateTest {
         //then
         assertEquals("Artur", result.getName());
         assertEquals("5",result.getId());
-
     }
 
   
