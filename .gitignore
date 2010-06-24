@@ -1,0 +1,7 @@
+/target/
+.*\.eml$
+.*\.ipr$
+.*\.iml$
+.*\.iws$
+.*\.bak$
+.*\.orig$
